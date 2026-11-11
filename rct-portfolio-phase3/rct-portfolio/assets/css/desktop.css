@@ -1,0 +1,210 @@
+/* Simulated desktop overlay + window chrome. Landing-page layout lives in layout.css.
+ * Window geometry is driven by JS and by [data-layout] on .desktop__windows (floating | compact). */
+
+:root {
+    --desk-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Courier New", monospace;
+    --taskbar-h: 48px;
+    --z-desktop: 1000;
+}
+
+/* Theme tokens. modules/display.js sets data-theme="light|dark" on .desktop. */
+.desktop {
+    --d-text: #2b2a28;       --d-surface: #efe6d4;   --d-surface-2: #e2d7bf;  --d-line: #2b2a28;
+    --d-chrome: #d8cfb9;     --d-inactive: #a89f8a;  --d-inactive-text: #2b2a28;
+    --d-active: #2b2a28;     --d-active-text: #f6efe0;
+    --d-tile: #f6efe0;       --d-clock: #e9e1cc;     --d-label-bg: rgba(246,239,224,.75);
+    --d-wallpaper: #cfc5ae;  --d-dot: rgba(60,50,30,.2); --d-glow: rgba(255,255,255,.5);
+    --d-muted: #6b6556;      --d-shadow: rgba(43,42,40,.3);
+    --d-link: #7a5200;       --d-focus: #b8860b;
+    --d-scale: 1;
+    --focus: var(--d-focus);
+}
+.desktop[data-theme="dark"] {
+    --d-text: #ece4d2;       --d-surface: #302e2b;   --d-surface-2: #3a3733;  --d-line: #0f0e0c;
+    --d-chrome: #3b3834;     --d-inactive: #4a463f;  --d-inactive-text: #cfc6b0;
+    --d-active: #e6dcc4;     --d-active-text: #2b2a28;
+    --d-tile: #4a463f;       --d-clock: #2b2926;     --d-label-bg: rgba(35,33,30,.78);
+    --d-wallpaper: #23211e;  --d-dot: rgba(255,255,255,.06); --d-glow: rgba(255,255,255,.04);
+    --d-muted: #a79f8b;      --d-shadow: rgba(0,0,0,.5);
+    --d-link: #e0b030;       --d-focus: #e0b030;
+}
+.desktop[data-text-size="small"] { --d-scale: .9; }
+.desktop[data-text-size="large"] { --d-scale: 1.15; }
+
+/* Scroll lock while the desktop is open (the page underneath is also made inert by JS) */
+html.has-desktop-open { overflow: hidden; overscroll-behavior: none; }
+
+.icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.icon { width: 1.25em; height: 1.25em; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Overlay shell ---------- */
+.desktop {
+    position: fixed; inset: 0; z-index: var(--z-desktop);
+    display: grid; grid-template-rows: minmax(0, 1fr) auto;
+    font-family: var(--desk-mono); color: var(--d-text);
+    background: var(--d-chrome);
+    overscroll-behavior: contain;
+    animation: desktop-in .18s ease-out both;
+}
+.desktop[hidden] { display: none; }
+.desktop:focus { outline: none; }
+
+.desktop__workspace {
+    position: relative; min-height: 0; overflow: hidden;
+    background:
+        radial-gradient(ellipse at 50% 35%, var(--d-glow), transparent 65%),
+        radial-gradient(var(--d-dot) 1px, transparent 1.3px) 0 0 / 18px 18px,
+        var(--d-wallpaper);
+}
+.desktop[data-wallpaper="plain"] .desktop__workspace { background: var(--d-wallpaper);
+}
+
+/* ---------- Shortcuts ---------- */
+.desktop__shortcuts { position: absolute; inset: 0; padding: 14px; }
+.desktop__shortcuts ul {
+    list-style: none; margin: 0; padding: 0; height: 100%;
+    display: grid; grid-auto-flow: column; grid-auto-columns: 96px;
+    grid-template-rows: repeat(auto-fill, 96px); align-content: start;
+}
+.shortcut {
+    width: 92px; display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 6px 2px; border-radius: 4px; text-align: center;
+}
+.shortcut__tile {
+    width: 52px; height: 52px; display: grid; place-items: center; font-size: 1.5rem;
+    background: var(--d-tile); color: var(--d-text); border: 2px solid var(--d-line); border-radius: 6px;
+    box-shadow: 2px 2px 0 var(--d-shadow);
+    transition: transform .1s ease, box-shadow .1s ease;
+}
+.shortcut__label {
+    font-size: .74rem; font-weight: 600; line-height: 1.15; padding: 1px 4px; border-radius: 2px;
+    background: var(--d-label-bg);
+}
+@media (hover: hover) { .shortcut:hover .shortcut__tile { transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--d-shadow); } }
+.shortcut:active .shortcut__tile { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--d-shadow); }
+
+/* ---------- Windows ---------- */
+.desktop__windows { position: absolute; inset: 0; pointer-events: none; }
+.app-window {
+    position: absolute; display: flex; flex-direction: column; pointer-events: auto;
+    background: var(--d-surface); color: var(--d-text);
+    border: 2px solid var(--d-line); border-radius: 6px; overflow: hidden;
+    box-shadow: 4px 4px 0 var(--d-shadow);
+    animation: window-in .14s ease-out both;
+}
+.app-window:focus { outline: none; }
+.app-window.is-active { box-shadow: 6px 6px 0 var(--d-shadow); }
+
+.app-window__titlebar {
+    flex: none; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 4px 0 10px;
+    background: var(--d-inactive); color: var(--d-inactive-text);
+    border-bottom: 2px solid var(--d-line); user-select: none; -webkit-user-select: none;
+}
+.app-window.is-active .app-window__titlebar { background: var(--d-active); color: var(--d-active-text); }
+.app-window__title {
+    flex: 1; min-width: 0; margin: 0; font: 700 .78rem/1 var(--desk-mono);
+    letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.app-window__close {
+    position: relative; flex: none; width: 28px; height: 28px; display: grid; place-items: center;
+    border: 1.5px solid currentColor; border-radius: 3px; font-size: .9rem;
+}
+.app-window__close::after { content: ""; position: absolute; inset: -6px; }   /* larger tap area */
+@media (hover: hover) { .app-window__close:hover { background: var(--d-tile); color: var(--d-text); } }
+.app-window__close:active { transform: scale(.94); }
+
+.app-window__content {
+    flex: 1; min-height: 0; overflow: auto; padding: 16px 18px; font-size: calc(1rem * var(--d-scale));
+    overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    font-family: Georgia, "Times New Roman", serif; line-height: 1.5;
+}
+.app-window__content:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+
+/* Dragging (floating layout only) */
+.desktop__windows[data-layout="floating"] .app-window__titlebar { cursor: grab; touch-action: none; }
+.app-window.is-dragging { animation: none; }
+.app-window.is-dragging .app-window__titlebar { cursor: grabbing; }
+
+/* Compact (phones): every window fills the workspace; only the top one is shown */
+.desktop__windows[data-layout="compact"] .app-window {
+    left: 6px; top: 6px; right: 6px; bottom: 6px; width: auto; height: auto;
+}
+.desktop__windows[data-layout="compact"] .app-window:not(.is-active) { visibility: hidden; }
+.desktop__windows[data-layout="compact"] .app-window__titlebar { height: 44px; }
+.desktop__windows[data-layout="compact"] .app-window__close { width: 34px; height: 34px; }
+
+/* Placeholder content */
+.app-placeholder h3 { margin: 0 0 .4em; font-size: 1.25rem; }
+.app-placeholder p { margin: 0 0 .8em; }
+.app-placeholder__tag {
+    display: inline-block; padding: 1px 8px; border: 1.5px dashed var(--d-muted); border-radius: 3px;
+    font: 600 .68rem var(--desk-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--d-muted);
+}
+
+/* ---------- Taskbar ---------- */
+.taskbar {
+    display: flex; align-items: center; gap: 8px; min-height: var(--taskbar-h); padding: 6px 8px;
+    background: var(--d-chrome); border-top: 2px solid var(--d-line);
+    box-shadow: inset 0 2px 0 var(--d-glow);
+}
+.taskbar button {
+    height: 34px; display: inline-flex; align-items: center; gap: 7px; padding: 0 10px;
+    font: 600 .76rem var(--desk-mono); background: var(--d-tile); color: var(--d-text);
+    border: 2px solid var(--d-line); border-radius: 4px; box-shadow: 2px 2px 0 var(--d-shadow);
+}
+.taskbar button:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--d-shadow); }
+.taskbar__shutdown { flex: none; }
+.taskbar__apps {
+    flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; padding: 2px 4px 4px 2px;
+    border-left: 2px solid var(--d-shadow); padding-left: 10px; margin-left: 2px;
+    scrollbar-width: thin;
+}
+.taskbar__app { flex: none; max-width: 150px; }
+.taskbar__app-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.taskbar__app.is-active { background: var(--d-inactive); color: var(--d-inactive-text); box-shadow: inset 2px 2px 0 var(--d-shadow); }
+.taskbar__clock {
+    flex: none; display: flex; flex-direction: column; align-items: flex-end; justify-content: center;
+    padding: 2px 10px; min-width: 96px; line-height: 1.15;
+    background: var(--d-clock); border: 2px solid var(--d-line); border-radius: 4px;
+    box-shadow: inset 2px 2px 0 var(--d-shadow);
+}
+.taskbar__time { font: 700 .9rem var(--desk-mono); font-variant-numeric: tabular-nums; }
+.taskbar__date { font: 500 .66rem var(--desk-mono); }
+.taskbar__date--short { display: none; }
+
+/* ---------- Boot / shutdown screen ---------- */
+.boot {
+    position: absolute; inset: 0; z-index: 50; display: grid; place-items: center;
+    background: #242321; color: #f6efe0;
+    opacity: 0; visibility: hidden; transition: opacity .3s ease, visibility 0s linear .3s;
+}
+.desktop[data-state="booting"] .boot,
+.desktop[data-state="closing"] .boot { opacity: 1; visibility: visible; transition: opacity .12s ease; }
+.boot__panel { width: min(260px, 70vw); text-align: center; }
+.boot__text { margin: 0 0 14px; font: 600 .95rem var(--desk-mono); letter-spacing: .12em; text-transform: uppercase; }
+.boot__bar { height: 14px; padding: 2px; border: 2px solid #f6efe0; }
+.boot__bar span { display: block; height: 100%; width: 0; background: #f6efe0; }
+.desktop[data-state="booting"] .boot__bar span,
+.desktop[data-state="closing"] .boot__bar span { animation: boot-fill var(--boot-ms, 1500ms) steps(12, end) forwards; }
+
+/* ---------- Animations ---------- */
+@keyframes desktop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes window-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes boot-fill { to { width: 100%; } }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 720px) {
+    .desktop__shortcuts { padding: 12px 8px; overflow-y: auto; }
+    .desktop__shortcuts ul { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); grid-template-rows: none; grid-auto-columns: auto; justify-items: center; row-gap: 6px; height: auto; }
+    .taskbar { padding: 6px; gap: 6px; }
+    .taskbar__shutdown-label, .taskbar__app-label { display: none; }
+    .taskbar__shutdown, .taskbar__app { width: 40px; height: 38px; padding: 0; justify-content: center; }
+    .taskbar__clock { min-width: 0; padding: 2px 7px; }
+    .taskbar__date--full { display: none; }
+    .taskbar__date--short { display: inline; }
+}
+
+/* Reduce motion: switched from Settings (default follows the OS preference, see core/settings.js) */
+.desktop[data-reduce-motion="true"],
+.desktop[data-reduce-motion="true"] * { animation: none !important; transition: none !important; }
+.desktop[data-reduce-motion="true"] .boot__bar span { width: 100%; }

@@ -1,0 +1,156 @@
+/* Arcade panel (controller): game menu, Tic-Tac-Toe, Snake, Doodle Pad.
+ * Uses the --d-* tokens and .btn look from panels.css / apps.css. Markup: includes/panels/arcade.php. */
+
+.panel--arcade { --panel-w: 480px; }
+.arcade [hidden], .panel--arcade [hidden] { display: none !important; }
+
+.arcade__heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.arcade__back {
+    flex: none; min-height: 40px; padding: 0 12px 0 10px; display: inline-flex; align-items: center; gap: 6px;
+    font: 700 .74rem var(--desk-mono); letter-spacing: .08em; text-transform: uppercase;
+    background: var(--d-tile); border: 2px solid var(--d-line); border-radius: 4px; box-shadow: 2px 2px 0 var(--d-shadow);
+}
+.arcade__back:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--d-shadow); }
+@media (hover: hover) { .arcade__back:hover { background: var(--d-surface-2); } }
+
+.arcade__body { display: grid; }
+.arcade__intro { margin: 0 0 12px; font: 700 .8rem var(--desk-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--d-muted); }
+.arcade__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 14px; }
+.arcade__hint { margin: 12px 0 0; text-align: center; font: .68rem/1.5 var(--desk-mono); color: var(--d-muted); }
+
+/* Shared: aria-disabled controls (kept focusable on purpose) */
+.panel--arcade [aria-disabled="true"] { cursor: not-allowed; }
+.panel--arcade .btn[aria-disabled="true"] { opacity: .5; box-shadow: none; }
+
+/* Segmented toggle (mode / tool) */
+.segmented { display: inline-flex; border: 2px solid var(--d-line); border-radius: 5px; overflow: hidden; box-shadow: 2px 2px 0 var(--d-shadow); }
+.segmented__btn { min-height: 44px; padding: 0 16px; font: 700 .76rem var(--desk-mono); background: var(--d-tile); color: var(--d-text); }
+.segmented__btn + .segmented__btn { border-left: 2px solid var(--d-line); }
+.segmented__btn[aria-pressed="true"] { background: var(--d-text); color: var(--d-tile); }
+.segmented__btn:focus-visible { outline-offset: -4px; outline-color: var(--d-focus); }
+.segmented__btn[aria-pressed="true"]:focus-visible { outline-color: #f3d27a; }
+
+/* ---------- Menu ---------- */
+.arcade-menu { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.arcade-menu__item {
+    width: 100%; min-height: 64px; padding: 10px 14px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px;
+    text-align: left; background: var(--d-tile); border: 2px solid var(--d-line); border-radius: 6px; box-shadow: 3px 3px 0 var(--d-shadow);
+}
+.arcade-menu__item:active { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--d-shadow); }
+@media (hover: hover) { .arcade-menu__item:hover { background: #fbf5e6; } .arcade-menu__item:hover .arcade-menu__go { translate: 3px 0; } }
+.arcade-menu__number {
+    width: 34px; height: 34px; display: grid; place-items: center;
+    font: 700 1rem var(--desk-mono); color: var(--d-tile); background: var(--d-text); border-radius: 4px;
+}
+.arcade-menu__text { display: grid; gap: 2px; min-width: 0; }
+.arcade-menu__text strong { font: 700 1rem var(--desk-mono); letter-spacing: .02em; }
+.arcade-menu__text small { font-size: .82rem; color: var(--d-muted); }
+.arcade-menu__go { font-size: .8rem; transition: translate .12s ease; }
+
+/* ---------- Tic-Tac-Toe ---------- */
+.ttt { display: grid; justify-items: center; gap: 12px; }
+.ttt__status { margin: 0; min-height: 1.5em; font: 700 .95rem var(--desk-mono); text-align: center; }
+.ttt__board { width: min(100%, 300px); display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ttt__cell {
+    aspect-ratio: 1; display: grid; place-items: center; min-width: 44px; min-height: 44px;
+    font: 700 clamp(2.1rem, 13vw, 3.4rem)/1 var(--desk-mono); color: var(--d-text);
+    background: var(--d-tile); border: 2px solid var(--d-line); border-radius: 6px; box-shadow: 3px 3px 0 var(--d-shadow);
+}
+.ttt__cell.is-o { color: #8c2f2a; }
+.ttt__cell.is-win { background: #f0d98c; }
+.ttt__cell[aria-disabled="true"] { cursor: default; }
+@media (hover: hover) { .ttt__cell[aria-disabled="false"]:hover { background: #fbf5e6; } }
+.ttt__cell:active:not([aria-disabled="true"]) { transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--d-shadow); }
+.ttt__scores { width: min(100%, 300px); margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.ttt__scores div { padding: 6px 4px; background: var(--d-surface-2); border: 1.5px solid var(--d-line); border-radius: 4px; }
+.ttt__scores dt { font: 700 .66rem var(--desk-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--d-muted); }
+.ttt__scores dd { margin: 0; font: 700 1.3rem var(--desk-mono); }
+
+/* ---------- Snake ---------- */
+.snake { display: grid; justify-items: center; gap: 10px; }
+.snake > * { width: min(100%, 400px); }
+.snake__hud { margin: 0; display: flex; justify-content: space-between; font: 700 .8rem var(--desk-mono); letter-spacing: .06em; text-transform: uppercase; }
+.snake__hud b { font-size: 1rem; margin-left: .3em; }
+.snake__screen {                                      /* the phone bezel around the green LCD */
+    position: relative; padding: 12px; background: #3b3731; border-radius: 14px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,.12), 3px 4px 0 var(--d-shadow);
+}
+.snake__canvas {
+    display: block; width: 100%; aspect-ratio: 4 / 3; height: auto;
+    background: #a9b98f; border: 3px solid #1f2517; border-radius: 3px;
+    image-rendering: pixelated; image-rendering: crisp-edges;
+    touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.snake__overlay {
+    position: absolute; inset: 15px; margin: 0; display: grid; place-items: center; padding: 12px;
+    text-align: center; white-space: pre-line; pointer-events: none;
+    font: 700 clamp(.8rem, 3.4vw, 1.05rem)/1.5 var(--desk-mono); letter-spacing: .06em; text-transform: uppercase;
+    color: #27301d; background: rgba(169, 185, 143, .8);
+}
+.snake__controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.snake__buttons { display: grid; gap: 10px; }
+.snake__buttons .btn { justify-content: center; min-width: 8.5em; }
+.snake__pad {
+    display: grid; grid-template-columns: repeat(3, 52px); grid-template-rows: repeat(2, 52px); gap: 6px; margin-inline: auto 4px;
+    touch-action: manipulation;
+}
+.snake__dir {
+    display: grid; place-items: center; font-size: 1.05rem; user-select: none; -webkit-user-select: none; touch-action: manipulation;
+    background: var(--d-tile); border: 2px solid var(--d-line); border-radius: 6px; box-shadow: 2px 3px 0 var(--d-shadow);
+}
+.snake__dir:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--d-shadow); background: var(--d-surface-2); }
+.snake__dir--up { grid-column: 2; grid-row: 1; }
+.snake__dir--left { grid-column: 1; grid-row: 2; }
+.snake__dir--down { grid-column: 2; grid-row: 2; }
+.snake__dir--right { grid-column: 3; grid-row: 2; }
+
+/* ---------- Doodle Pad ---------- */
+.doodle { display: grid; gap: 12px; }
+.doodle__toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.doodle__colors { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.doodle__swatch {
+    position: relative; width: 30px; height: 30px; border-radius: 50%;
+    background: var(--swatch); border: 2px solid var(--d-line);
+}
+.doodle__swatch::after { content: ""; position: absolute; inset: -8px; }          /* 46px touch target, same visual size */
+.doodle__swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--d-surface), 0 0 0 4px var(--d-text); }
+.doodle__picker { display: block; }
+.doodle__picker input {
+    display: block; width: 34px; height: 34px; padding: 0; cursor: pointer;
+    background: none; border: 2px solid var(--d-line); border-radius: 50%; overflow: hidden;
+}
+.doodle__picker input::-webkit-color-swatch-wrapper { padding: 0; }
+.doodle__picker input::-webkit-color-swatch { border: 0; border-radius: 50%; }
+.doodle__picker input::-moz-color-swatch { border: 0; border-radius: 50%; }
+.doodle__picker input:focus-visible { outline: 3px solid var(--d-focus); outline-offset: 3px; }
+.doodle__size { flex: 1 1 150px; display: grid; gap: 2px; min-width: 130px; }
+.doodle__size-label { font: 700 .72rem var(--desk-mono); letter-spacing: .08em; text-transform: uppercase; }
+.doodle__size output { margin-left: .4em; color: var(--d-muted); }
+.doodle__size input { width: 100%; min-height: 32px; margin: 0; accent-color: var(--d-text); }
+.doodle__size input:focus-visible { outline: 3px solid var(--d-focus); outline-offset: 2px; }
+.doodle__canvas {
+    display: block; width: 100%; height: auto; aspect-ratio: 3 / 2;
+    background: #fffdf6; border: 2px solid var(--d-line); border-radius: 3px; box-shadow: 3px 3px 0 var(--d-shadow);
+    cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.doodle .arcade__actions { margin-top: 0; }
+
+/* Keyboard hints mean nothing on a touchscreen */
+@media (pointer: coarse) { .arcade__hint { display: none; } }
+
+@media (max-width: 520px) {
+    .arcade__back { padding-inline: 8px; }
+    .snake__screen { padding: 9px; border-radius: 12px; }
+    .snake__overlay { inset: 12px; }
+    .snake__pad { grid-template-columns: repeat(3, 54px); grid-template-rows: repeat(2, 54px); }
+}
+/* Short landscape phones: keep the board and the pad side by side so nothing needs scrolling */
+@media (max-height: 520px) and (orientation: landscape) {
+    .panel--arcade { --panel-w: 640px; }
+    .snake { grid-template-columns: minmax(0, 1fr) auto; align-items: center; justify-items: stretch; column-gap: 16px; }
+    .snake > * { width: auto; }
+    .snake__hud, .snake__screen { grid-column: 1; }
+    .snake__controls { grid-column: 2; grid-row: 1 / span 2; flex-direction: column; }
+    .snake__pad { margin: 0; }
+    .arcade__hint { display: none; }
+}

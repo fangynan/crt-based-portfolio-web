@@ -1,0 +1,37 @@
+/* Power states + restrained CRT transitions. Layout lives in layout.css. */
+
+.device__screen { transform-origin: 50% 50%; will-change: auto; }
+
+/* Power ON: thin bright line opens up to full picture */
+.device__screen.is-powering-on  { animation: crt-on  .38s cubic-bezier(.2,.7,.2,1) both; }
+/* Power OFF: picture collapses to a bright line */
+.device__screen.is-powering-off { animation: crt-off .24s ease-in both; }
+/* Static returns softly after the collapse */
+.device__screen.is-static-in    { animation: crt-static-in .22s ease-out both; }
+
+@keyframes crt-on {
+    0%   { transform: scaleY(.02) scaleX(.7); filter: brightness(3) contrast(1.4); }
+    55%  { transform: scaleY(1.03) scaleX(1); filter: brightness(1.7); }
+    100% { transform: none; filter: brightness(1); }
+}
+@keyframes crt-off {
+    0%   { transform: none; filter: brightness(1); opacity: 1; }
+    65%  { transform: scaleY(.03) scaleX(1); filter: brightness(2.6); opacity: 1; }
+    100% { transform: scaleY(.01) scaleX(.35); filter: brightness(3); opacity: 0; }
+}
+@keyframes crt-static-in {
+    from { opacity: 0; filter: brightness(1.6); }
+    to   { opacity: 1; filter: brightness(1); }
+}
+
+/* Interactive screens */
+.device--tv[data-power="on"] .device__hit,
+.device--computer[data-power="on"] .device__hit { cursor: pointer; }
+.device__hit:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .device__screen.is-powering-on,
+    .device__screen.is-powering-off,
+    .device__screen.is-static-in { animation: none; }
+    .remote__led, .remote__power { transition: none; }
+}

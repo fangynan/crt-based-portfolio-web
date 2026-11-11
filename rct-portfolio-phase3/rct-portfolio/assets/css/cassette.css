@@ -1,0 +1,141 @@
+/* Cassette archive: a small tape deck. Content cards (.tape-card) sit below it like an index card.
+ * Deck states (set by cassette-archive.js on .deck[data-state]): empty | inserting | playing | ejecting */
+
+.panel--cassette { --panel-w: 640px; }
+
+.deck { display: grid; gap: 12px; }
+
+/* The recess the tape slides into */
+.deck__window {
+    position: relative; overflow: hidden; height: 216px;
+    background: radial-gradient(ellipse at 50% 30%, #3a3732, #1d1b18 70%);
+    border: 2px solid var(--ink); border-radius: 8px;
+    box-shadow: inset 0 6px 14px rgba(0,0,0,.6);
+}
+.deck__window::before {                                  /* slot lip: the tape slides in from behind it */
+    content: ""; position: absolute; z-index: 3; left: 0; right: 0; top: 0; height: 12px;
+    background: linear-gradient(#0c0b0a, #1d1b18); border-bottom: 1px solid #4a463f;
+}
+.deck__glass {                                           /* smoked door glare */
+    position: absolute; inset: 0; z-index: 4; pointer-events: none;
+    background: linear-gradient(115deg, rgba(255,255,255,.13) 0 24%, transparent 24% 40%, rgba(255,255,255,.06) 40% 46%, transparent 46%);
+}
+
+.cassette {
+    position: absolute; z-index: 2; left: 50%; top: 18px; margin-left: calc(var(--cassette-w) / -2);
+    --cassette-w: min(280px, 80%);
+    width: var(--cassette-w); aspect-ratio: 300 / 190;
+    container-type: inline-size;
+    filter: drop-shadow(0 8px 6px rgba(0,0,0,.5));
+}
+.cassette__shell { display: block; width: 100%; height: 100%; }
+.cassette__body   { fill: #403c36; stroke: #14130f; stroke-width: 3; }
+.cassette__label-bg { fill: #efe6d4; stroke: #14130f; stroke-width: 2; }
+.cassette__foot   { fill: #2d2a26; stroke: #14130f; stroke-width: 2; }
+.cassette__slot   { fill: #17150f; }
+.cassette__tape   { fill: #3b2a1e; }
+.cassette__window { fill: rgba(175, 190, 195, .22); stroke: #14130f; stroke-width: 2; }
+.cassette__screw  { fill: #17150f; }
+.reel__hub   { fill: #e8e0cc; stroke: #14130f; stroke-width: 1.5; }
+.reel__tooth { fill: #2b2a28; }
+.reel__axle  { fill: #2b2a28; }
+
+.cassette__label {
+    position: absolute; left: 4.7%; top: 7.4%; width: 90.7%; height: 50.5%;
+    display: flex; flex-direction: column; justify-content: center; gap: 1px;
+    padding: 0 5%; color: #2b2a28; font-family: var(--hand); line-height: 1.05;
+    border-bottom: 0;
+}
+.cassette__number { font: 700 clamp(8px, 3.2cqi, 11px) var(--desk-mono); letter-spacing: .16em; opacity: .6; }
+.cassette__number::before { content: "SIDE A · "; }
+.cassette__title {
+    font-size: clamp(14px, 7cqi, 22px); font-weight: 700;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+/* ---- states ---- */
+.deck[data-state="empty"] .cassette     { transform: translateY(-130%); }
+.deck[data-state="inserting"] .cassette { animation: tape-insert .9s cubic-bezier(.3,.7,.3,1) both; }
+.deck[data-state="playing"] .cassette   { transform: none; }
+.deck[data-state="ejecting"] .cassette  { animation: tape-eject .42s ease-in both; }
+
+@keyframes tape-insert { from { transform: translateY(-130%); } 62% { transform: translateY(5%); } to { transform: translateY(0); } }
+@keyframes tape-eject  { from { transform: translateY(0); } to { transform: translateY(-130%); } }
+
+/* Reels: turn while loading and playing, rest otherwise */
+.reel__spin { transform-box: fill-box; transform-origin: 50% 50%; animation: reel-spin 2.6s linear infinite; animation-play-state: paused; }
+.reel--right .reel__spin { animation-duration: 2.1s; }
+.deck[data-state="inserting"] .reel__spin,
+.deck[data-state="playing"] .reel__spin { animation-play-state: running; }
+.deck[data-state="inserting"] .reel__spin { animation-duration: .7s; }
+@keyframes reel-spin { to { transform: rotate(360deg); } }
+
+/* ---- control strip ---- */
+.deck__panel {
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 14px;
+    padding: 10px 12px; background: #d8cfb9; border: 2px solid var(--ink); border-radius: 6px;
+}
+.deck__readout {
+    margin: 0; display: flex; gap: 14px; align-items: center;
+    padding: 8px 12px; min-width: 12.5rem; justify-content: space-between;
+    background: #26241f; color: #e2c765; border-radius: 3px;
+    font: 700 .82rem var(--desk-mono); letter-spacing: .12em; text-shadow: 0 0 6px rgba(226,199,101,.35);
+}
+.deck__controls { display: flex; gap: 8px; }
+.deck__btn {
+    min-width: 52px; height: 44px; padding: 0 12px;
+    font: 700 .8rem var(--desk-mono); letter-spacing: -.05em;
+    background: #cfc6b2; color: var(--ink); border: 2px solid var(--ink); border-radius: 4px;
+    box-shadow: 0 3px 0 var(--ink);
+}
+.deck__btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+@media (hover: hover) { .deck__btn:hover { background: #e3dbc6; } }
+
+.deck__tracks { display: flex; gap: 5px; list-style: none; margin: 0; padding: 0; }
+.deck__tracks li { flex: 1 1 0; min-width: 0; }
+.deck__track {
+    width: 100%; min-width: 36px; height: 40px;
+    font: 700 .8rem var(--desk-mono);
+    background: var(--d-tile); border: 2px solid var(--ink); border-radius: 4px;
+}
+.deck__track[aria-current="true"] { background: var(--ink); color: #f6efe0; }
+@media (hover: hover) { .deck__track:not([aria-current="true"]):hover { background: #e3dbc6; } }
+
+/* ---- the tape's contents: an index card ---- */
+.tape-sheet {
+    margin-top: 14px; min-height: 8rem;
+    background: #f6efe0; border: 2px solid var(--ink); border-radius: 4px; box-shadow: 3px 3px 0 var(--d-shadow);
+    padding: 16px;
+}
+.tape-sheet:empty, .tape-sheet:not(:has(.tape-card:not([hidden]))) { visibility: hidden; }   /* nothing on the card until the tape is in */
+.tape-card.is-entering { animation: card-in .35s ease-out both; }
+@keyframes card-in { from { opacity: 0; translate: 0 8px; } to { opacity: 1; translate: 0 0; } }
+
+.tape-card__meta { margin: 0 0 .25rem; font: 700 .7rem var(--desk-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--d-muted); }
+.tape-card__title { margin: 0 0 .8rem; font-size: 1.5rem; line-height: 1.2; }
+.tape-card__preview { margin-bottom: 1rem; }
+.tape-card__image {
+    display: block; width: 100%; aspect-ratio: 16 / 9; max-height: 260px; object-fit: cover;
+    background: var(--paper); border: 2px solid var(--ink); border-radius: 4px;
+}
+.tape-card__image.is-placeholder { display: grid; place-items: center; border-style: dashed; border-color: var(--d-muted); color: var(--d-muted); font: .8rem var(--desk-mono); }
+.tape-card__thumbs { display: flex; gap: 8px; list-style: none; margin: 8px 0 0; padding: 0; flex-wrap: wrap; }
+.tape-card__thumb { display: block; width: 64px; height: 44px; padding: 0; border: 2px solid var(--ink); border-radius: 3px; overflow: hidden; opacity: .7; }
+.tape-card__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.tape-card__thumb[aria-pressed="true"] { opacity: 1; outline: 2px solid var(--focus); outline-offset: 1px; }
+.tape-card__text p { margin: 0 0 .8em; line-height: 1.55; }
+.tape-card__heading { margin: 1.1rem 0 .5rem; padding-bottom: .3rem; border-bottom: 2px solid var(--ink); font: 700 .7rem var(--desk-mono); letter-spacing: .12em; text-transform: uppercase; }
+.tape-card__links { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* chips (same look as the desktop apps; apps.css defines them for .app only via tokens, so repeat the essentials) */
+.panel .chip-list { display: flex; flex-wrap: wrap; gap: .45rem; list-style: none; margin: 0; padding: 0; }
+.panel .chip { padding: .15em .65em; font: 600 .78rem var(--desk-mono); background: var(--d-surface-2); border: 1.5px solid var(--ink); border-radius: 3px; }
+.panel .chip.is-placeholder { background: transparent; border-style: dashed; border-color: var(--d-muted); color: var(--d-muted); font-style: italic; }
+
+@media (max-width: 520px) {
+    .deck__window { height: 190px; }
+    .deck__panel { justify-content: center; }
+    .deck__readout { min-width: 0; flex: 1 1 100%; }
+    .deck__controls { width: 100%; }
+    .deck__btn { flex: 1; }
+}
